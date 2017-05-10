@@ -10,4 +10,6 @@
 
 @interface UIScrollView (StretchableHeader)
 
+@property (strong, nonatomic) UIView *stretchableHeader;
+
 @end
