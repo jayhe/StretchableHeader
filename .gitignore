@@ -1,0 +1,7 @@
+StretchableHeader.xcodeproj/xcuserdata/
+StretchableHeader.xcworkspace/
+Pods/
+*.swp
+Podfile.lock
+.DS_Store
+StretchableHeader.xcodeproj/project.xcworkspace/xcuserdata/
