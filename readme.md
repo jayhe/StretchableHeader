@@ -1,4 +1,3 @@
-[TOC]
 
 ### StretchableHeader
 
@@ -7,7 +6,7 @@
  *   支持UIScrollView以及它的子类，使用起来非常方便
 
 ------------------
-####如何使用
+#### 如何使用
 * pod "StretchableHeader" 
 * 使用代码示例：
 
