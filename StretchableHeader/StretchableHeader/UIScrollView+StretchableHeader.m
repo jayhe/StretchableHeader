@@ -10,27 +10,34 @@
 #import <objc/runtime.h>
 
 static char kStretchableHeaderKey;
+static char kHasAddKVO;
 
 @implementation UIScrollView (StretchableHeader)
 
-- (void)dealloc
-{
-    [self removeObserver:self forKeyPath:@"contentOffset"];
-    NSLog(@"%s", __FUNCTION__);
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        Method originMethod = class_getInstanceMethod(self, @selector(removeFromSuperview));
+        Method swizzleMethod = class_getInstanceMethod(self, @selector(sh_removeFromSuperview));
+        BOOL isAdded = class_addMethod(self, @selector(removeFromSuperview), method_getImplementation(swizzleMethod), method_getTypeEncoding(swizzleMethod));
+        if (isAdded) {
+            class_replaceMethod(self, @selector(sh_removeFromSuperview), method_getImplementation(originMethod), method_getTypeEncoding(originMethod));
+        } else {
+            method_exchangeImplementations(originMethod, swizzleMethod);
+        }
+    });
 }
+
+- (void)sh_removeFromSuperview {
+    if (self.hasAddKVO) {
+        [self removeObserver:self forKeyPath:@"contentOffset"];
+    }
+    
+    [self sh_removeFromSuperview];
+}
+
 
 #pragma mark - Custom Method
-
-- (void)layoutSubviews
-{
-    [super layoutSubviews];
-}
-
-- (void)removeFromSuperview
-{
-    [self removeObserver:self forKeyPath:@"contentOffset"];
-    [super removeFromSuperview];
-}
 
 #pragma mark - Observer
 
@@ -56,13 +63,14 @@ static char kStretchableHeaderKey;
 
 - (void)setStretchableHeader:(UIView *)stretchableHeader
 {
-    if (self.stretchableHeader)
+    if (self.hasAddKVO)
     {
         [self removeObserver:self forKeyPath:@"contentOffset"];
+        [self setHasAddKVO:NO];
     }
     objc_setAssociatedObject(self, &kStretchableHeaderKey, stretchableHeader, OBJC_ASSOCIATION_RETAIN);
     [self addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew context:nil];
-    
+    [self setHasAddKVO:YES];
     if (stretchableHeader)
     {
         [self insertSubview:self.stretchableHeader atIndex:0];
@@ -71,6 +79,15 @@ static char kStretchableHeaderKey;
     self.contentInset = UIEdgeInsetsMake(self.headerHeight, 0, 0, 0);
     self.contentOffset = CGPointMake(0, -self.headerHeight);
     self.stretchableHeader.contentMode = UIViewContentModeScaleAspectFill;
+}
+
+- (BOOL)hasAddKVO {
+    NSNumber *has = objc_getAssociatedObject(self, &kHasAddKVO);
+    return has ? has.boolValue : NO;
+}
+
+- (void)setHasAddKVO:(BOOL)has {
+    objc_setAssociatedObject(self, &kHasAddKVO, @(has), OBJC_ASSOCIATION_ASSIGN);
 }
 
 - (CGFloat)headerHeight

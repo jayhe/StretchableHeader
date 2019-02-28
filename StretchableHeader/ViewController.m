@@ -29,6 +29,15 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     [self setupUI];
+    
+    // test
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            ViewController *tmpVC = [ViewController new];
+            [self.navigationController pushViewController:tmpVC animated:YES];
+        });
+    });
 }
 
 - (void)didReceiveMemoryWarning
